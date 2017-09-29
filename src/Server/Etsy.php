@@ -1,6 +1,10 @@
 <?php
-namespace Y0lk\OAuth1\Client\Server;
 
+namespace Gentor\OAuth1Etsy\Client\Server;
+
+use Gentor\OAuth1Etsy\Client\Signature\HmacSha1Signature;
+use GuzzleHttp\Exception\BadResponseException;
+use League\OAuth1\Client\Signature\SignatureInterface;
 use League\OAuth1\Client\Credentials\TokenCredentials;
 use League\OAuth1\Client\Server\Server;
 use League\OAuth1\Client\Server\User;
@@ -28,7 +32,12 @@ class Etsy extends Server
      */
     public function __construct($clientCredentials, SignatureInterface $signature = null)
     {
+        if (is_null($signature)) {
+            $signature = new HmacSha1Signature($clientCredentials);
+        }
+
         parent::__construct($clientCredentials, $signature);
+
         if (is_array($clientCredentials)) {
             $this->parseConfiguration($clientCredentials);
         }
@@ -62,8 +71,9 @@ class Etsy extends Server
      */
     public function urlTemporaryCredentials()
     {
-        return self::API_URL.'oauth/request_token?scope='.$this->applicationScope;
+        return self::API_URL . 'oauth/request_token?scope=' . $this->applicationScope;
     }
+
     /**
      * {@inheritDoc}
      */
@@ -71,19 +81,21 @@ class Etsy extends Server
     {
         return $this->login_url;
     }
+
     /**
      * {@inheritDoc}
      */
     public function urlTokenCredentials()
     {
-        return self::API_URL.'oauth/access_token';
+        return self::API_URL . 'oauth/access_token';
     }
+
     /**
      * {@inheritDoc}
      */
     public function urlUserDetails()
     {
-        return self::API_URL.'users/__SELF__';
+        return self::API_URL . 'users/__SELF__';
     }
 
     /**
@@ -138,6 +150,7 @@ class Etsy extends Server
         $configToPropertyMap = array(
             'scope' => 'applicationScope'
         );
+
         foreach ($configToPropertyMap as $config => $property) {
             if (isset($configuration[$config])) {
                 $this->$property = $configuration[$config];
@@ -163,7 +176,8 @@ class Etsy extends Server
                 'headers' => $headers
             ]);
         } catch (BadResponseException $e) {
-            return $this->handleTemporaryCredentialsBadResponse($e);
+            $this->handleTemporaryCredentialsBadResponse($e);
+            return null;
         }
 
         //Catch body and retrieve Etsy login_url
@@ -180,13 +194,7 @@ class Etsy extends Server
      */
     public function getAuthorizationUrl($temporaryIdentifier)
     {
-        // Somebody can pass through an instance of temporary
-        // credentials and we'll extract the identifier from there.
-        if ($temporaryIdentifier instanceof TemporaryCredentials) {
-            $temporaryIdentifier = $temporaryIdentifier->getIdentifier();
-        }
-
-        //Return the authorization url directly since it's provided by Etsy and contains all parameters
+        // Return the authorization url directly since it's provided by Etsy and contains all parameters
         return $this->urlAuthorization();
     }
 }
