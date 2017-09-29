@@ -4,10 +4,11 @@ namespace Gentor\OAuth1Etsy\Client\Server;
 
 use Gentor\OAuth1Etsy\Client\Signature\HmacSha1Signature;
 use GuzzleHttp\Exception\BadResponseException;
-use League\OAuth1\Client\Signature\SignatureInterface;
-use League\OAuth1\Client\Credentials\TokenCredentials;
 use League\OAuth1\Client\Server\Server;
 use League\OAuth1\Client\Server\User;
+use League\OAuth1\Client\Credentials\TokenCredentials;
+use League\OAuth1\Client\Signature\SignatureInterface;
+use League\OAuth1\Client\Signature\HmacSha1Signature as LeagueHmacSha1Signature;
 
 class Etsy extends Server
 {
@@ -32,14 +33,14 @@ class Etsy extends Server
      */
     public function __construct($clientCredentials, SignatureInterface $signature = null)
     {
-        if (is_null($signature)) {
-            $signature = new HmacSha1Signature($clientCredentials);
-        }
-
         parent::__construct($clientCredentials, $signature);
 
         if (is_array($clientCredentials)) {
             $this->parseConfiguration($clientCredentials);
+        }
+
+        if ($this->signature instanceof LeagueHmacSha1Signature) {
+            $this->signature = new HmacSha1Signature($this->clientCredentials);
         }
     }
 
@@ -180,7 +181,7 @@ class Etsy extends Server
             return null;
         }
 
-        //Catch body and retrieve Etsy login_url
+        // Catch body and retrieve Etsy login_url
         $body = $response->getBody();
         parse_str($body, $data);
 
