@@ -41,9 +41,9 @@ class HmacSha1Signature extends Signature
             }
         }
 
-        // compare the keys, then compare the values if the keys are identical
+        // compare only the keys
         usort($data, function ($a, $b) {
-            return strcmp($a[0], $b[0]) ?: strcmp($a[1], $b[1]);
+            return strcmp($a[0], $b[0]);
         });
 
         foreach ($data as $key => $pair) {
